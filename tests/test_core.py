@@ -82,9 +82,29 @@ def test_milestone_3():
 
 
 # Milestone 4: Apply dynamic and static post-training quantization to the model.
-@pytest.mark.skip(reason="remove this line when you start milestone 4")
 def test_milestone_4():
-    raise NotImplementedError("write the test for milestone 4")
+    import torch
+    from app.core import milestone_2, milestone_4
+
+    m2 = milestone_2(steps=20, batch_size=4)
+    res = milestone_4(model=m2["model"], tokenizer=m2["tokenizer"])
+
+    assert "original_model" in res
+    assert "dynamic_model" in res
+    assert "static_model" in res
+
+    dummy_input = torch.randint(0, res["original_model"].config.vocab_size, (1, 16))
+
+    out_orig, _ = res["original_model"](dummy_input)
+    out_dyn, _ = res["dynamic_model"](dummy_input)
+    out_stat, _ = res["static_model"](dummy_input)
+
+    assert out_orig.shape == out_dyn.shape == out_stat.shape
+    # Check that dynamic and static models contain quantized operations
+    dyn_repr = str(res["dynamic_model"])
+    stat_repr = str(res["static_model"])
+    assert "DynamicQuantizedLinear" in dyn_repr or "quantized" in dyn_repr
+    assert "QuantizedLinear" in stat_repr or "quantized" in stat_repr or "Quantized" in stat_repr
 
 
 # Milestone 5: Measure and compare the original and quantized model sizes.

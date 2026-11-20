@@ -20,7 +20,7 @@ Tick these off as you go, and commit after each one.
       Hint: Use the 'Build GPT from Scratch' drill's techniques to define and train your model.
 - [x] **3. Generate sample dialogue from the trained GPT.**  
       Hint: Implement a text generation function using your trained GPT to produce sample dialogue.
-- [ ] **4. Apply dynamic and static post-training quantization to the model.**  
+- [x] **4. Apply dynamic and static post-training quantization to the model.**  
       Hint: Refer to the 'Shrink a Neural Network with Quantisation' drill for applying dynamic and static post-training quantization.
 - [ ] **5. Measure and compare the original and quantized model sizes.**  
       Hint: Save your original and quantized models and check their file sizes to measure memory footprint.

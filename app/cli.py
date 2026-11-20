@@ -10,6 +10,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("train", help="train small GPT on dialogue corpus (milestone 2)")
     gen_parser = sub.add_parser("generate", help="generate sample dialogue (milestone 3)")
     gen_parser.add_argument("--prompt", default="[Hero] ", help="starting dialogue prompt")
+    sub.add_parser("quantize", help="apply dynamic and static PTQ (milestone 4)")
     # TODO: add your own commands here as you work through the milestones.
     args = parser.parse_args(argv)
     if args.command == "hello":
@@ -26,6 +27,10 @@ def main(argv: list[str] | None = None) -> None:
         from app.core import milestone_3
         res = milestone_3(prompts=[args.prompt], max_new_tokens=40)
         print(f"Generated dialogue:\n{res['generated_samples'][args.prompt]}")
+    elif args.command == "quantize":
+        from app.core import milestone_4
+        res = milestone_4()
+        print("Dynamic and static post-training quantization applied successfully!")
 
 
 if __name__ == "__main__":

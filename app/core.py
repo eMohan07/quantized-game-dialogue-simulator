@@ -1,4 +1,5 @@
 """Your code. One stub per milestone; build them in order and keep each one small."""
+import copy
 import math
 import random
 import re
@@ -365,10 +366,89 @@ def milestone_3(
     }
 
 
+def apply_dynamic_quantization(model: nn.Module) -> nn.Module:
+    """Apply dynamic post-training quantization to linear layers."""
+    model_copy = copy.deepcopy(model)
+    model_copy.eval()
+    quantized_model = tq.quantize_dynamic(
+        model_copy,
+        {nn.Linear},
+        dtype=torch.qint8,
+    )
+    return quantized_model
+
+
+def apply_static_quantization(
+    model: nn.Module,
+    calibration_tokens: Optional[List[int]] = None,
+    num_calibration_batches: int = 8,
+    batch_size: int = 4,
+    device: str = "cpu",
+) -> nn.Module:
+    """Apply static post-training quantization with calibration."""
+    model_copy = copy.deepcopy(model)
+    model_copy.eval()
+    model_copy.to(device)
+
+    # Determine supported engine (onednn, fbgemm, or x86)
+    supported = getattr(torch.backends.quantized, "supported_engines", [])
+    if "onednn" in supported:
+        engine = "onednn"
+    elif "fbgemm" in supported:
+        engine = "fbgemm"
+    else:
+        engine = "x86"
+
+    qcfg = tq.get_default_qconfig(engine)
+
+    # Assign qconfig to QuantLinear modules
+    for m in model_copy.modules():
+        if isinstance(m, QuantLinear):
+            m.qconfig = qcfg
+
+    tq.prepare(model_copy, inplace=True)
+
+    # Run calibration with sample dialogue tokens
+    block_size = getattr(model_copy, "config", None)
+    ctx_len = block_size.block_size if block_size is not None else 32
+
+    if calibration_tokens is None:
+        data = milestone_1()
+        calibration_tokens = data["tokens"]
+
+    with torch.no_grad():
+        for _ in range(num_calibration_batches):
+            x, _ = get_batch(calibration_tokens, ctx_len, batch_size, device=device)
+            model_copy(x)
+
+    tq.convert(model_copy, inplace=True)
+    return model_copy
+
+
 # --- Milestone 4: Apply dynamic and static post-training quantization to the model.
 # Hint: Refer to the 'Shrink a Neural Network with Quantisation' drill for applying dynamic and static post-training quantization.
-def milestone_4():  # TODO(milestone 4)
-    raise NotImplementedError("TODO(milestone 4)")
+def milestone_4(
+    model: Optional[MiniGPT] = None,
+    tokenizer: Optional[CharTokenizer] = None,
+    calibration_tokens: Optional[List[int]] = None,
+) -> Dict[str, Any]:
+    """Quantize the dialogue model using both dynamic and static PTQ."""
+    if model is None or tokenizer is None:
+        m2_res = milestone_2(steps=50)
+        model = m2_res["model"]
+        tokenizer = m2_res["tokenizer"]
+
+    dynamic_model = apply_dynamic_quantization(model)
+    static_model = apply_static_quantization(
+        model, calibration_tokens=calibration_tokens
+    )
+
+    return {
+        "original_model": model,
+        "dynamic_model": dynamic_model,
+        "static_model": static_model,
+        "tokenizer": tokenizer,
+    }
 
 
 # --- Milestone 5: Measure and compare the original and quantized model sizes.
