@@ -288,10 +288,81 @@ def milestone_2(
     }
 
 
+def generate_dialogue(
+    model: nn.Module,
+    tokenizer: CharTokenizer,
+    prompt: str = "[Hero] ",
+    max_new_tokens: int = 50,
+    temperature: float = 0.8,
+    top_k: Optional[int] = 5,
+    device: str = "cpu",
+) -> str:
+    """Generate game dialogue given a prompt and trained model."""
+    model.eval()
+    encoded = tokenizer.encode(prompt)
+    if not encoded:
+        encoded = [0]
+    idx = torch.tensor(encoded, dtype=torch.long, device=device).unsqueeze(0)
+    block_size = getattr(model, "config", None)
+    max_ctx = block_size.block_size if block_size is not None else 32
+
+    with torch.no_grad():
+        for _ in range(max_new_tokens):
+            idx_cond = idx[:, -max_ctx:]
+            logits, _ = model(idx_cond)
+            logits = logits[:, -1, :]
+
+            if temperature <= 0.0:
+                next_token = torch.argmax(logits, dim=-1, keepdim=True)
+            else:
+                logits = logits / temperature
+                if top_k is not None and top_k > 0:
+                    v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                    logits[logits < v[:, [-1]]] = -float("Inf")
+                probs = F.softmax(logits, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1)
+
+            idx = torch.cat((idx, next_token), dim=1)
+
+    generated_tokens = idx[0].tolist()
+    return tokenizer.decode(generated_tokens)
+
+
 # --- Milestone 3: Generate sample dialogue from the trained GPT.
 # Hint: Implement a text generation function using your trained GPT to produce sample dialogue.
-def milestone_3():  # TODO(milestone 3)
-    raise NotImplementedError("TODO(milestone 3)")
+def milestone_3(
+    model: Optional[MiniGPT] = None,
+    tokenizer: Optional[CharTokenizer] = None,
+    prompts: Optional[List[str]] = None,
+    max_new_tokens: int = 40,
+    temperature: float = 0.8,
+) -> Dict[str, Any]:
+    """Generate sample dialogue responses for game characters."""
+    if model is None or tokenizer is None:
+        m2_res = milestone_2(steps=60)
+        model = m2_res["model"]
+        tokenizer = m2_res["tokenizer"]
+
+    test_prompts = (
+        prompts
+        if prompts is not None
+        else ["[Hero] ", "[Guard] ", "[Merchant] ", "[Wizard] "]
+    )
+    generated_dialogues = {}
+    for p in test_prompts:
+        generated_dialogues[p] = generate_dialogue(
+            model=model,
+            tokenizer=tokenizer,
+            prompt=p,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+        )
+
+    return {
+        "generated_samples": generated_dialogues,
+        "model": model,
+        "tokenizer": tokenizer,
+    }
 
 
 # --- Milestone 4: Apply dynamic and static post-training quantization to the model.

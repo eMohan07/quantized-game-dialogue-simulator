@@ -18,7 +18,7 @@ Tick these off as you go, and commit after each one.
       Hint: Focus on cleaning and tokenizing your game dialogue text data.
 - [x] **2. Implement a basic GPT architecture and train it on the corpus.**  
       Hint: Use the 'Build GPT from Scratch' drill's techniques to define and train your model.
-- [ ] **3. Generate sample dialogue from the trained GPT.**  
+- [x] **3. Generate sample dialogue from the trained GPT.**  
       Hint: Implement a text generation function using your trained GPT to produce sample dialogue.
 - [ ] **4. Apply dynamic and static post-training quantization to the model.**  
       Hint: Refer to the 'Shrink a Neural Network with Quantisation' drill for applying dynamic and static post-training quantization.

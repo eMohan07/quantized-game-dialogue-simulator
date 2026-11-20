@@ -55,9 +55,30 @@ def test_milestone_2():
 
 
 # Milestone 3: Generate sample dialogue from the trained GPT.
-@pytest.mark.skip(reason="remove this line when you start milestone 3")
 def test_milestone_3():
-    raise NotImplementedError("write the test for milestone 3")
+    from app.core import milestone_2, milestone_3, generate_dialogue
+
+    m2 = milestone_2(steps=30, batch_size=4)
+    res = milestone_3(
+        model=m2["model"],
+        tokenizer=m2["tokenizer"],
+        prompts=["[Hero] ", "[Guard] "],
+        max_new_tokens=25,
+    )
+    assert "generated_samples" in res
+    assert "[Hero] " in res["generated_samples"]
+    assert "[Guard] " in res["generated_samples"]
+
+    hero_sample = res["generated_samples"]["[Hero] "]
+    assert hero_sample.startswith("[Hero] ")
+    assert len(hero_sample) > len("[Hero] ")
+
+    # Direct function test with temperature 0 (deterministic)
+    det_sample = generate_dialogue(
+        m2["model"], m2["tokenizer"], prompt="[Elder] ", max_new_tokens=15, temperature=0.0
+    )
+    assert det_sample.startswith("[Elder] ")
+    assert len(det_sample) > len("[Elder] ")
 
 
 # Milestone 4: Apply dynamic and static post-training quantization to the model.
