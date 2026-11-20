@@ -16,7 +16,7 @@ Tick these off as you go, and commit after each one.
 
 - [x] **1. Prepare a small game dialogue text corpus.**  
       Hint: Focus on cleaning and tokenizing your game dialogue text data.
-- [ ] **2. Implement a basic GPT architecture and train it on the corpus.**  
+- [x] **2. Implement a basic GPT architecture and train it on the corpus.**  
       Hint: Use the 'Build GPT from Scratch' drill's techniques to define and train your model.
 - [ ] **3. Generate sample dialogue from the trained GPT.**  
       Hint: Implement a text generation function using your trained GPT to produce sample dialogue.

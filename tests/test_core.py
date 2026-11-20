@@ -34,9 +34,24 @@ def test_milestone_1():
 
 
 # Milestone 2: Implement a basic GPT architecture and train it on the corpus.
-@pytest.mark.skip(reason="remove this line when you start milestone 2")
 def test_milestone_2():
-    raise NotImplementedError("write the test for milestone 2")
+    import torch
+    from app.core import milestone_2, MiniGPT
+
+    result = milestone_2(steps=50, batch_size=4)
+    assert "model" in result
+    assert "initial_loss" in result
+    assert "final_loss" in result
+    assert isinstance(result["model"], MiniGPT)
+
+    # Loss should decrease during training
+    assert result["final_loss"] < result["initial_loss"]
+
+    # Verify model forward pass shape
+    dummy_input = torch.randint(0, result["config"].vocab_size, (2, 16))
+    logits, loss = result["model"](dummy_input)
+    assert logits.shape == (2, 16, result["config"].vocab_size)
+    assert loss is None
 
 
 # Milestone 3: Generate sample dialogue from the trained GPT.
