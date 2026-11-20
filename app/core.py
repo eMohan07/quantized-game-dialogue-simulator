@@ -1,8 +1,11 @@
 """Your code. One stub per milestone; build them in order and keep each one small."""
 import copy
+import io
 import math
+import os
 import random
 import re
+import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
@@ -451,10 +454,70 @@ def milestone_4(
     }
 
 
+def get_model_file_size(model: nn.Module) -> int:
+    """Measure the saved file size of a model in bytes."""
+    with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+        temp_path = f.name
+    try:
+        torch.save(model.state_dict(), temp_path)
+        size_bytes = os.path.getsize(temp_path)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+    return size_bytes
+
+
+def measure_and_compare_model_sizes(
+    original_model: nn.Module,
+    dynamic_model: nn.Module,
+    static_model: nn.Module,
+) -> Dict[str, Any]:
+    """Measure and compare model disk sizes across original and quantized versions."""
+    orig_bytes = get_model_file_size(original_model)
+    dyn_bytes = get_model_file_size(dynamic_model)
+    stat_bytes = get_model_file_size(static_model)
+
+    reduction_dyn = (1.0 - (dyn_bytes / orig_bytes)) * 100.0 if orig_bytes > 0 else 0.0
+    reduction_stat = (1.0 - (stat_bytes / orig_bytes)) * 100.0 if orig_bytes > 0 else 0.0
+
+    compression_dyn = (orig_bytes / dyn_bytes) if dyn_bytes > 0 else 1.0
+    compression_stat = (orig_bytes / stat_bytes) if stat_bytes > 0 else 1.0
+
+    return {
+        "original_size_bytes": orig_bytes,
+        "dynamic_size_bytes": dyn_bytes,
+        "static_size_bytes": stat_bytes,
+        "original_size_kb": round(orig_bytes / 1024, 2),
+        "dynamic_size_kb": round(dyn_bytes / 1024, 2),
+        "static_size_kb": round(stat_bytes / 1024, 2),
+        "reduction_dynamic_pct": round(reduction_dyn, 2),
+        "reduction_static_pct": round(reduction_stat, 2),
+        "compression_ratio_dynamic": round(compression_dyn, 2),
+        "compression_ratio_static": round(compression_stat, 2),
+    }
+
+
 # --- Milestone 5: Measure and compare the original and quantized model sizes.
 # Hint: Save your original and quantized models and check their file sizes to measure memory footprint.
-def milestone_5():  # TODO(milestone 5)
-    raise NotImplementedError("TODO(milestone 5)")
+def milestone_5(
+    models_dict: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Measure and compare disk footprints of original, dynamic, and static quantized models."""
+    if models_dict is None:
+        models_dict = milestone_4()
+
+    comparison = measure_and_compare_model_sizes(
+        original_model=models_dict["original_model"],
+        dynamic_model=models_dict["dynamic_model"],
+        static_model=models_dict["static_model"],
+    )
+    return {
+        **comparison,
+        "original_model": models_dict["original_model"],
+        "dynamic_model": models_dict["dynamic_model"],
+        "static_model": models_dict["static_model"],
+        "tokenizer": models_dict["tokenizer"],
+    }
 
 
 # --- Milestone 6: Simulate inference speed by comparing operations on original versus quantized weights.

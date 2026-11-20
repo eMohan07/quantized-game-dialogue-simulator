@@ -108,9 +108,24 @@ def test_milestone_4():
 
 
 # Milestone 5: Measure and compare the original and quantized model sizes.
-@pytest.mark.skip(reason="remove this line when you start milestone 5")
 def test_milestone_5():
-    raise NotImplementedError("write the test for milestone 5")
+    from app.core import milestone_2, milestone_4, milestone_5
+
+    m2 = milestone_2(steps=20, batch_size=4)
+    m4 = milestone_4(model=m2["model"], tokenizer=m2["tokenizer"])
+    res = milestone_5(m4)
+
+    assert "original_size_bytes" in res
+    assert "dynamic_size_bytes" in res
+    assert "static_size_bytes" in res
+    assert "reduction_dynamic_pct" in res
+    assert "reduction_static_pct" in res
+
+    # Quantized models should have smaller sizes than original FP32 model
+    assert res["dynamic_size_bytes"] < res["original_size_bytes"]
+    assert res["static_size_bytes"] < res["original_size_bytes"]
+    assert res["reduction_dynamic_pct"] > 0
+    assert res["reduction_static_pct"] > 0
 
 
 # Milestone 6: Simulate inference speed by comparing operations on original versus quantized weights.

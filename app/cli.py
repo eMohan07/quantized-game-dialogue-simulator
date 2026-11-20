@@ -11,6 +11,7 @@ def main(argv: list[str] | None = None) -> None:
     gen_parser = sub.add_parser("generate", help="generate sample dialogue (milestone 3)")
     gen_parser.add_argument("--prompt", default="[Hero] ", help="starting dialogue prompt")
     sub.add_parser("quantize", help="apply dynamic and static PTQ (milestone 4)")
+    sub.add_parser("compare-sizes", help="measure and compare model sizes (milestone 5)")
     # TODO: add your own commands here as you work through the milestones.
     args = parser.parse_args(argv)
     if args.command == "hello":
@@ -31,6 +32,12 @@ def main(argv: list[str] | None = None) -> None:
         from app.core import milestone_4
         res = milestone_4()
         print("Dynamic and static post-training quantization applied successfully!")
+    elif args.command == "compare-sizes":
+        from app.core import milestone_5
+        res = milestone_5()
+        print(f"Original Model Size: {res['original_size_kb']} KB")
+        print(f"Dynamic Model Size:  {res['dynamic_size_kb']} KB (Reduction: {res['reduction_dynamic_pct']}%, Compression: {res['compression_ratio_dynamic']}x)")
+        print(f"Static Model Size:   {res['static_size_kb']} KB (Reduction: {res['reduction_static_pct']}%, Compression: {res['compression_ratio_static']}x)")
 
 
 if __name__ == "__main__":
