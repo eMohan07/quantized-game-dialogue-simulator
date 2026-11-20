@@ -12,6 +12,7 @@ def main(argv: list[str] | None = None) -> None:
     gen_parser.add_argument("--prompt", default="[Hero] ", help="starting dialogue prompt")
     sub.add_parser("quantize", help="apply dynamic and static PTQ (milestone 4)")
     sub.add_parser("compare-sizes", help="measure and compare model sizes (milestone 5)")
+    sub.add_parser("simulate-speed", help="simulate inference speed on resource-constrained devices (milestone 6)")
     # TODO: add your own commands here as you work through the milestones.
     args = parser.parse_args(argv)
     if args.command == "hello":
@@ -38,6 +39,13 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Original Model Size: {res['original_size_kb']} KB")
         print(f"Dynamic Model Size:  {res['dynamic_size_kb']} KB (Reduction: {res['reduction_dynamic_pct']}%, Compression: {res['compression_ratio_dynamic']}x)")
         print(f"Static Model Size:   {res['static_size_kb']} KB (Reduction: {res['reduction_static_pct']}%, Compression: {res['compression_ratio_static']}x)")
+    elif args.command == "simulate-speed":
+        from app.core import milestone_6
+        res = milestone_6(num_steps=20)
+        print("=== Simulated Inference Speed Report ===")
+        print(f"Original: {res['original']['latency_ms_per_step']} ms/step, {res['original']['steps_per_sec']} steps/s")
+        print(f"Dynamic:  {res['dynamic']['latency_ms_per_step']} ms/step, {res['dynamic']['steps_per_sec']} steps/s (Simulated Device Speedup: {res['dynamic']['simulated_bandwidth_speedup']}x)")
+        print(f"Static:   {res['static']['latency_ms_per_step']} ms/step, {res['static']['steps_per_sec']} steps/s (Simulated Device Speedup: {res['static']['simulated_bandwidth_speedup']}x)")
 
 
 if __name__ == "__main__":

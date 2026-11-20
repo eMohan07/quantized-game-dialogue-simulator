@@ -6,6 +6,7 @@ import os
 import random
 import re
 import tempfile
+import time
 from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
@@ -520,7 +521,125 @@ def milestone_5(
     }
 
 
+def benchmark_inference(
+    model: nn.Module,
+    input_tensor: torch.Tensor,
+    warmup_steps: int = 5,
+    num_steps: int = 25,
+) -> Dict[str, float]:
+    """Measure inference latency and throughput across repeated steps."""
+    model.eval()
+    with torch.no_grad():
+        # Warmup passes
+        for _ in range(warmup_steps):
+            model(input_tensor)
+
+        # Timed benchmark passes
+        start_time = time.perf_counter()
+        for _ in range(num_steps):
+            model(input_tensor)
+        elapsed_time = time.perf_counter() - start_time
+
+    total_time_ms = elapsed_time * 1000.0
+    latency_ms = total_time_ms / num_steps
+    throughput = num_steps / elapsed_time if elapsed_time > 0 else 0.0
+
+    return {
+        "total_time_ms": round(total_time_ms, 3),
+        "latency_ms_per_step": round(latency_ms, 3),
+        "steps_per_sec": round(throughput, 2),
+    }
+
+
+def simulate_inference_speed(
+    original_model: nn.Module,
+    dynamic_model: nn.Module,
+    static_model: nn.Module,
+    num_steps: int = 25,
+    warmup_steps: int = 5,
+    seq_len: int = 16,
+) -> Dict[str, Any]:
+    """Simulate inference performance and compare original vs quantized models."""
+    config = getattr(original_model, "config", None)
+    vocab_size = config.vocab_size if config is not None else 64
+    input_tensor = torch.randint(0, vocab_size, (1, seq_len))
+
+    orig_bench = benchmark_inference(
+        original_model, input_tensor, warmup_steps=warmup_steps, num_steps=num_steps
+    )
+    dyn_bench = benchmark_inference(
+        dynamic_model, input_tensor, warmup_steps=warmup_steps, num_steps=num_steps
+    )
+    stat_bench = benchmark_inference(
+        static_model, input_tensor, warmup_steps=warmup_steps, num_steps=num_steps
+    )
+
+    # Measured speedup (empirical CPU host execution)
+    orig_latency = orig_bench["latency_ms_per_step"]
+    dyn_speedup = (
+        round(orig_latency / dyn_bench["latency_ms_per_step"], 2)
+        if dyn_bench["latency_ms_per_step"] > 0
+        else 1.0
+    )
+    stat_speedup = (
+        round(orig_latency / stat_bench["latency_ms_per_step"], 2)
+        if stat_bench["latency_ms_per_step"] > 0
+        else 1.0
+    )
+
+    # Simulated memory-bandwidth bound speedup for constrained edge/game devices
+    # In autoregressive generation on edge devices, memory bandwidth to load weights
+    # dominates runtime. Reduced bit-width yields proportional bandwidth speedup.
+    orig_bytes = get_model_file_size(original_model)
+    dyn_bytes = get_model_file_size(dynamic_model)
+    stat_bytes = get_model_file_size(static_model)
+
+    simulated_bandwidth_speedup_dyn = (
+        round(orig_bytes / dyn_bytes, 2) if dyn_bytes > 0 else 1.0
+    )
+    simulated_bandwidth_speedup_stat = (
+        round(orig_bytes / stat_bytes, 2) if stat_bytes > 0 else 1.0
+    )
+
+    return {
+        "num_steps": num_steps,
+        "input_shape": list(input_tensor.shape),
+        "original": orig_bench,
+        "dynamic": {
+            **dyn_bench,
+            "measured_speedup": dyn_speedup,
+            "simulated_bandwidth_speedup": simulated_bandwidth_speedup_dyn,
+        },
+        "static": {
+            **stat_bench,
+            "measured_speedup": stat_speedup,
+            "simulated_bandwidth_speedup": simulated_bandwidth_speedup_stat,
+        },
+    }
+
+
 # --- Milestone 6: Simulate inference speed by comparing operations on original versus quantized weights.
 # Hint: Measure the time taken for a fixed number of inference steps for both models, as shown in the 'Shrink a Neural Network with Quantisation' drill.
-def milestone_6():  # TODO(milestone 6)
-    raise NotImplementedError("TODO(milestone 6)")
+def milestone_6(
+    models_dict: Optional[Dict[str, Any]] = None,
+    num_steps: int = 25,
+    warmup_steps: int = 5,
+) -> Dict[str, Any]:
+    """Measure inference latency and simulate generation speed on resource-constrained devices."""
+    if models_dict is None:
+        models_dict = milestone_4()
+
+    speed_report = simulate_inference_speed(
+        original_model=models_dict["original_model"],
+        dynamic_model=models_dict["dynamic_model"],
+        static_model=models_dict["static_model"],
+        num_steps=num_steps,
+        warmup_steps=warmup_steps,
+    )
+    return {
+        **speed_report,
+        "original_model": models_dict["original_model"],
+        "dynamic_model": models_dict["dynamic_model"],
+        "static_model": models_dict["static_model"],
+        "tokenizer": models_dict["tokenizer"],
+    }

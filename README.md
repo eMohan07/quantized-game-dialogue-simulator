@@ -24,7 +24,7 @@ Tick these off as you go, and commit after each one.
       Hint: Refer to the 'Shrink a Neural Network with Quantisation' drill for applying dynamic and static post-training quantization.
 - [x] **5. Measure and compare the original and quantized model sizes.**  
       Hint: Save your original and quantized models and check their file sizes to measure memory footprint.
-- [ ] **6. Simulate inference speed by comparing operations on original versus quantized weights.**  
+- [x] **6. Simulate inference speed by comparing operations on original versus quantized weights.**  
       Hint: Measure the time taken for a fixed number of inference steps for both models, as shown in the 'Shrink a Neural Network with Quantisation' drill.
 
 ## Run it

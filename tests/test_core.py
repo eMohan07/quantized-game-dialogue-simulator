@@ -129,7 +129,27 @@ def test_milestone_5():
 
 
 # Milestone 6: Simulate inference speed by comparing operations on original versus quantized weights.
-@pytest.mark.skip(reason="remove this line when you start milestone 6")
 def test_milestone_6():
-    raise NotImplementedError("write the test for milestone 6")
+    from app.core import milestone_2, milestone_4, milestone_6
+
+    m2 = milestone_2(steps=20, batch_size=4)
+    m4 = milestone_4(model=m2["model"], tokenizer=m2["tokenizer"])
+    res = milestone_6(m4, num_steps=10, warmup_steps=2)
+
+    assert "original" in res
+    assert "dynamic" in res
+    assert "static" in res
+
+    assert "latency_ms_per_step" in res["original"]
+    assert "steps_per_sec" in res["original"]
+    assert res["original"]["latency_ms_per_step"] > 0
+    assert res["original"]["steps_per_sec"] > 0
+
+    assert "measured_speedup" in res["dynamic"]
+    assert "simulated_bandwidth_speedup" in res["dynamic"]
+    assert "measured_speedup" in res["static"]
+    assert "simulated_bandwidth_speedup" in res["static"]
+
+    assert res["dynamic"]["simulated_bandwidth_speedup"] > 1.0
+    assert res["static"]["simulated_bandwidth_speedup"] > 1.0
 
