@@ -14,7 +14,7 @@ This project helps game developers build a small, quantized GPT for in-game dial
 
 Tick these off as you go, and commit after each one.
 
-- [ ] **1. Prepare a small game dialogue text corpus.**  
+- [x] **1. Prepare a small game dialogue text corpus.**  
       Hint: Focus on cleaning and tokenizing your game dialogue text data.
 - [ ] **2. Implement a basic GPT architecture and train it on the corpus.**  
       Hint: Use the 'Build GPT from Scratch' drill's techniques to define and train your model.

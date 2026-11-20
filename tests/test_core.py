@@ -5,9 +5,32 @@ They start skipped. Remove the `skip` line as you work on each milestone.
 import pytest
 
 # Milestone 1: Prepare a small game dialogue text corpus.
-@pytest.mark.skip(reason="remove this line when you start milestone 1")
 def test_milestone_1():
-    raise NotImplementedError("write the test for milestone 1")
+    from app.core import milestone_1, clean_dialogue, CharTokenizer
+
+    # Test cleaning
+    dirty = "  [Hero] Hello!   \r\n\r\n [Guard] Halt!  "
+    cleaned = clean_dialogue(dirty)
+    assert cleaned == "[Hero] Hello!\n[Guard] Halt!"
+
+    # Test full milestone 1 workflow
+    data = milestone_1()
+    assert "corpus" in data
+    assert "tokenizer" in data
+    assert "tokens" in data
+    assert "vocab_size" in data
+
+    tokenizer = data["tokenizer"]
+    assert isinstance(tokenizer, CharTokenizer)
+    assert tokenizer.vocab_size == data["vocab_size"]
+    assert tokenizer.vocab_size > 20
+    assert len(data["tokens"]) > 100
+
+    # Ensure round-trip encode-decode works cleanly
+    sample = "[Hero] Are we ready?"
+    encoded = tokenizer.encode(sample)
+    decoded = tokenizer.decode(encoded)
+    assert decoded == sample
 
 
 # Milestone 2: Implement a basic GPT architecture and train it on the corpus.
